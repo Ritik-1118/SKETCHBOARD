@@ -5,7 +5,7 @@ import cors from "cors"
 
 const app = express();
 // const isDev = app.settings.env === 'development'
-const URL = 'http://localhost:3000'
+const URL = 'https://sketch-board-xi.vercel.app/'
 app.use(cors({origin: URL}))
 const httpServer = createServer(app);
 const io = new Server(httpServer, { cors: URL });
