@@ -15,26 +15,6 @@ const Board = () => {
     const {activeMenuItem, actionMenuItem} = useSelector((state) => state.menu);
     const {color, size} = useSelector((state) => state.toolbox[activeMenuItem]);
 
-    useEffect(() => {
-        if (!canvasRef.current) return
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d')
-
-        const changeConfig = (color, size) => {
-            context.strokeStyle = color
-            context.lineWidth = size
-        }
-        const handleChangeConfig = (config) => {
-            console.log("config", config)
-            changeConfig(config.color, config.size)
-        }
-        changeConfig(color, size)
-        socket.on('changeConfig', handleChangeConfig)
-
-        return () => {
-            socket.off('changeConfig', handleChangeConfig)
-        }
-    }, [color, size]);
 
     useEffect(() => {
         if (!canvasRef.current) return
@@ -62,70 +42,101 @@ const Board = () => {
         const canvas = canvasRef.current;
         const context = canvas.getContext('2d')
 
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
-
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
         const beginPath = (x, y) => {
-            context.beginPath()
-            context.moveTo(x, y)
-        }
+            context.beginPath();
+            context.moveTo(x, y);
+        };
+
         const drawLine = (x, y) => {
-            context.lineTo(x, y)
-            context.stroke()
-        }
-        const handleBeginPath = (path) => {
-            beginPath(path.x, path.y)
-        }
+            context.lineTo(x, y);
+            context.stroke();
+        };
 
         const handleDrawLine = (path) => {
-            drawLine(path.x, path.y)
+            drawLine(path.x, path.y);
+        };
+
+        const setLocalUserContext = () => {
+            context.strokeStyle = color;
+            context.lineWidth = size;
+            if (activeMenuItem === MENU_ITEMS.ERASER) {
+                context.globalCompositeOperation = 'destination-out';
+            } else {
+                context.globalCompositeOperation = 'source-over';
+            }
         }
+
         const handleMouseDown = (e) => {
-            shouldDraw.current = true
-            beginPath(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY)
-            socket.emit('beginPath', {x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY})
-        }
+            shouldDraw.current = true;
+            setLocalUserContext();
+            beginPath(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+            socket.emit('beginPath', { x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY, color, size, tool: activeMenuItem });
+        };
+
         const handleMouseMove = (e) => {
-            if (!shouldDraw.current) return
-            drawLine(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY)
-            socket.emit('drawLine', {x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY})
-        }
+            if (!shouldDraw.current) return;
+            setLocalUserContext();
+            drawLine(e.clientX || e.touches[0].clientX, e.clientY || e.touches[0].clientY);
+            socket.emit('drawLine', { x: e.clientX || e.touches[0].clientX, y: e.clientY || e.touches[0].clientY });
+        };
+
         const handleMouseUp = (e) => {
-            shouldDraw.current = false
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
-            drawHistory.current.push(imageData)
-            historyPointer.current = drawHistory.current.length - 1
-        }
+            shouldDraw.current = false;
+            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+            drawHistory.current.push(imageData);
+            historyPointer.current = drawHistory.current.length - 1;
+            socket.emit('endPath');
+        };
 
-        canvas.addEventListener('mousedown', handleMouseDown)
-        canvas.addEventListener('mousemove', handleMouseMove)
-        canvas.addEventListener('mouseup', handleMouseUp)
+        const handleRemoteBeginPath = (path) => {
+            context.save();
+            context.strokeStyle = path.color;
+            context.lineWidth = path.size;
+            if (path.tool === MENU_ITEMS.ERASER) {
+                context.globalCompositeOperation = 'destination-out';
+            } else {
+                context.globalCompositeOperation = 'source-over';
+            }
+            beginPath(path.x, path.y);
+        };
 
-        canvas.addEventListener('touchstart', handleMouseDown)
-        canvas.addEventListener('touchmove', handleMouseMove)
-        canvas.addEventListener('touchend', handleMouseUp)
+        const handleRemoteEndPath = () => {
+            context.restore();
+        };
 
-        socket.on('beginPath', handleBeginPath)
-        socket.on('drawLine', handleDrawLine)
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+
+        canvas.addEventListener('touchstart', handleMouseDown);
+        canvas.addEventListener('touchmove', handleMouseMove);
+        canvas.addEventListener('touchend', handleMouseUp);
+
+        socket.on('beginPath', handleRemoteBeginPath);
+        socket.on('drawLine', handleDrawLine);
+        socket.on('endPath', handleRemoteEndPath);
 
         return () => {
-            canvas.removeEventListener('mousedown', handleMouseDown)
-            canvas.removeEventListener('mousemove', handleMouseMove)
-            canvas.removeEventListener('mouseup', handleMouseUp)
+            canvas.removeEventListener('mousedown', handleMouseDown);
+            canvas.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('mouseup', handleMouseUp);
 
-            canvas.removeEventListener('touchstart', handleMouseDown)
-            canvas.removeEventListener('touchmove', handleMouseMove)
-            canvas.removeEventListener('touchend', handleMouseUp)
+            canvas.removeEventListener('touchstart', handleMouseDown);
+            canvas.removeEventListener('touchmove', handleMouseMove);
+            canvas.removeEventListener('touchend', handleMouseUp);
 
-            socket.off('beginPath', handleBeginPath)
-            socket.off('drawLine', handleDrawLine)
-        }
+            socket.off('beginPath', handleRemoteBeginPath);
+            socket.off('drawLine', handleDrawLine);
+            socket.off('endPath', handleRemoteEndPath);
+        };
     },[]);
 
     // console.log(color,size);
     return <> 
-        <canvas ref={canvasRef}></canvas> 
+        <canvas ref={canvasRef} role="graphics-document"></canvas>
     </>
 };
 export default Board;
