@@ -5,13 +5,28 @@ import { useDispatch, useSelector } from "react-redux";
 import { MENU_ITEMS } from '@/constants';
 import { menuItemClick, actionItemClick } from '@/slice/menuSlice'
 
+/**
+ * Menu component displays the main menu with tools like pencil, eraser, undo, redo, and download.
+ * @component
+ */
 const Menu = () => {
     const dispatch = useDispatch();
     const activeMenuItem = useSelector((state) => state.menu.activeMenuItem)
+
+    /**
+     * Handles the click event on a menu item.
+     * Dispatches the menuItemClick action with the clicked item's name.
+     * @param {string} itemName - The name of the menu item that was clicked.
+     */
     const handleMenuClick = (itemName) => {
         dispatch(menuItemClick(itemName))
     }
 
+    /**
+     * Handles the click event on an action item.
+     * Dispatches the actionItemClick action with the clicked item's name.
+     * @param {string} itemName - The name of the action item that was clicked.
+     */
     const handleActioItemClick = (itemName) => {
         dispatch(actionItemClick(itemName))
     }

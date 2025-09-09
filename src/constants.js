@@ -1,3 +1,8 @@
+/**
+ * Enum for colors used in the application.
+ * @readonly
+ * @enum {string}
+ */
 const COLORS = {
     BLACK: 'black',
     RED: 'red',
@@ -8,6 +13,11 @@ const COLORS = {
     WHITE: 'white'
 }
 
+/**
+ * Enum for menu items.
+ * @readonly
+ * @enum {string}
+ */
 const MENU_ITEMS = {
     PENCIL: 'PENCIL',
     ERASER: 'ERASER',
