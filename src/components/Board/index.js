@@ -65,6 +65,9 @@ const Board = () => {
         canvas.width = window.innerWidth
         canvas.height = window.innerHeight
 
+        const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+        drawHistory.current.push(imageData);
+        historyPointer.current = drawHistory.current.length - 1;
 
         const beginPath = (x, y) => {
             context.beginPath()
@@ -94,6 +97,7 @@ const Board = () => {
         const handleMouseUp = (e) => {
             shouldDraw.current = false
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height)
+            drawHistory.current.splice(historyPointer.current + 1)
             drawHistory.current.push(imageData)
             historyPointer.current = drawHistory.current.length - 1
         }
