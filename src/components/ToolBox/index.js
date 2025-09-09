@@ -5,6 +5,10 @@ import { COLORS, MENU_ITEMS } from '@/constants';
 import {changeColor, changeBrushSize } from '@/slice/toolBoxSlice'
 import { socket } from "@/socket";
 
+/**
+ * ToolBox component displays options for the selected tool, such as color and brush size.
+ * @component
+ */
 const ToolBox = () => {
     const dispatch = useDispatch();
     const activeMenuItem = useSelector((state) => state.menu.activeMenuItem)
@@ -12,10 +16,21 @@ const ToolBox = () => {
     const showBrushToolOption = activeMenuItem === MENU_ITEMS.PENCIL || activeMenuItem === MENU_ITEMS.ERASER
     const {color, size} = useSelector((state) => state.toolbox[activeMenuItem])
 
+    /**
+     * Updates the brush size.
+     * Dispatches the changeBrushSize action and emits a 'changeConfig' socket event.
+     * @param {React.ChangeEvent<HTMLInputElement>} e - The change event from the input element.
+     */
     const updateBrushSize = (e) => {
         dispatch(changeBrushSize({item: activeMenuItem, size: e.target.value}))
         socket.emit('changeConfig', {color, size: e.target.value })
     };
+
+    /**
+     * Updates the color.
+     * Dispatches the changeColor action and emits a 'changeConfig' socket event.
+     * @param {string} newColor - The new color to be set.
+     */
     const updateColor = (newColor) => {
         dispatch(changeColor({item: activeMenuItem, color: newColor}))
         socket.emit('changeConfig', {color: newColor, size })
